@@ -1,60 +1,139 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import apiClient from '../api/apiClient';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  // 📧 ফিক্সড: ইউজারনেম অথবা ইমেইল এবং পাসওয়ার্ড ইনপুট স্টেট
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
+  // 📝 সাধারণ ফর্ম সাবমিট (ইউজারনেম বা ইমেইল ও পাসওয়ার্ড দিয়ে লগইন লজিক)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const result = await login(username, password);
+    setLoading(true);
+
+    // ইউজারনেম বা ইমেইল যেকোনোটি পাস করতে পারে
+    const result = await login(email, password);
+    setLoading(false);
+
     if (result.success) {
-      // উইন্ডো রিলোডসহ হোম পেজে পাঠানো যাতে গ্লোবাল স্টেট এবং ন্যাভবার রি-রেন্ডার হয়
       window.location.href = '/'; 
     } else {
-      setError('ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!');
+      setError('ইউজারনেম/ইমেইল অথবা পাসওয়ার্ড ভুল হয়েছে! অনুগ্রহ করে আবার চেষ্টা করুন।');
     }
   };
-  return (
-    <div className="flex items-center justify-center pt-10">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100">
-        <h2 className="text-2xl font-black text-center text-gray-800 mb-2">স্বাগতম ব্যাক!</h2>
-        <p className="text-sm text-gray-500 text-center mb-6">আপনার অ্যাকাউন্ট লগইন করুন</p>
+
+  // 🌐 গুগলের ওয়ান-ক্লিক জিমেইল সাকসেস হ্যান্ডেলার
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    try {
+      const res = await apiClient.post('accounts/google-login/', {
+        credential: credentialResponse.credential
+      });
+      
+      if (res.data.access) {
+        // ১. টোকেনসমূহ লোকালস্টোরেজে সেভ করা
+        localStorage.setItem('access_token', res.data.access);
+        localStorage.setItem('refresh_token', res.data.refresh);
         
-        {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl mb-4 text-center font-medium border border-red-100">{error}</div>}
+        // ২. ইউজার প্রোফাইল অবজেক্টটি লোকালস্টোরেজে স্ট্রিং আকারে ব্যাকআপ রাখা (যদি আপনার কন্টেক্সট এটি রিড করে)
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        
+        // 🔥 ৩. ফিক্সড: গ্লোবাল স্টেট এবং ন্যাভবার রি-রেন্ডার ট্রিগার করে ইনস্ট্যান্ট লগইন স্টেট অ্যাক্টিভেট করার মেগা ট্রিকস
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error("Google Login Backend Error:", err);
+      setError('গুগল লগইন সফল হলেও সেশন তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।');
+    }
+  };
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase mb-1">ইউজারনেম</label>
-            <input 
-              type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-indigo-500 text-sm transition"
-              placeholder="username"
+  return (
+    // 💡 টিপস: এখানে আপনার নিজের Google Client ID বসিয়ে নেবেন
+    <GoogleOAuthProvider clientId="319373078569-e4g1lprci9svolk06q017u72lavuvbd9.apps.googleusercontent.com">
+
+      <div className="flex items-center justify-center pt-8 select-none">
+        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 animate-fadeIn">
+          <h2 className="text-2xl font-black text-center text-gray-800 mb-1">স্বাগতম ব্যাক!</h2>
+          <p className="text-xs text-gray-400 text-center mb-6 font-medium">আপনার মার্চেন্ট বা কাস্টমার অ্যাকাউন্ট লগইন করুন</p>
+          
+          {error && (
+            <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl mb-4 text-center font-bold border border-red-100">
+              {error}
+            </div>
+          )}
+
+          {/* ইমেইল ও পাসওয়ার্ড ইনপুট ফর্ম */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                Email
+              </label>
+              <input 
+                type="text" 
+                required 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-indigo-500 text-xs font-semibold text-gray-700 transition"
+                placeholder="যেমন: demo@gmail.com"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                Password
+              </label>
+              <input 
+                type="password" 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-indigo-500 text-xs font-semibold text-gray-700 transition"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white font-black py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition text-xs uppercase tracking-wider disabled:bg-gray-400"
+            >
+              {loading ? "প্রসেস হচ্ছে..." : "লগইন করুন"}
+            </button>
+          </form>
+
+          {/* 🔘 ওয়ান-ক্লিক জিমেইল লগইন ডিভাইডার রিবন */}
+          <div className="relative flex py-4 items-center">
+            <div className="flex-grow border-t border-gray-100"></div>
+            <span className="flex-shrink mx-3 text-gray-400 font-bold text-[10px] uppercase">অথবা জিমেইল দিয়ে</span>
+            <div className="flex-grow border-t border-gray-100"></div>
+          </div>
+
+          {/* গুগলের অফিশিয়াল ওয়ান-ক্লিক বাটন কম্পোনেন্ট */}
+          <div className="flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('গুগল সাইন-ইন প্রসেস ক্র্যাশ করেছে!')}
+              shape="pill"
+              theme="outline"
+              size="large"
+              text="signin_with"
+              ux_mode="popup"  // পপ-আপ মোড নির্দিষ্ট করা
             />
           </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase mb-1">পাসওয়ার্ড</label>
-            <input 
-              type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-indigo-500 text-sm transition"
-              placeholder="••••••••"
-            />
-          </div>
-          <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-indigo-700 transition text-sm">
-            লগইন করুন
-          </button>
-        </form>
 
-        <p className="text-sm text-center text-gray-600 mt-6">
-          অ্যাকাউন্ট নেই? <Link to="/register" className="text-indigo-600 font-bold hover:underline">নতুন অ্যাকাউন্ট তৈরি করুন</Link>
-        </p>
+          <p className="text-xs font-bold text-center text-gray-400 mt-6">
+            প্লাটফর্মে নতুন? <Link to="/register" className="text-indigo-600 font-black hover:underline">নতুন অ্যাকাউন্ট তৈরি করুন</Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </GoogleOAuthProvider>
   );
 };
 

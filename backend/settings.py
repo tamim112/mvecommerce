@@ -108,13 +108,13 @@ if os.environ.get('RENDER'):
     }
 else:
     # আপনার লোকাল পিসিতে আগের মতোই সহজ SQLite চলবে (যাতে লোকাল কাজ ব্যাহত না হয়)
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -170,7 +170,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-AUTH_USER_MODEL = 'accounts.User'
+# AUTH_USER_MODEL = 'accounts.User'
 
 
 
@@ -201,4 +201,7 @@ SIMPLE_JWT = {
 }
 
 
-
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

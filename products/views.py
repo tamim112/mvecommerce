@@ -35,17 +35,23 @@ class VendorStockUpdateView(APIView):
     def patch(self, request, pk):
         user = request.user
         
-        # ১. সিকিউরিটি চেক
-        if not hasattr(user, 'is_vendor') or not user.is_vendor:
+        # সিকিউরিটি চেক - UserProfile এ is_vendor চেক করো
+        try:
+            user_profile = user.profile
+            is_vendor = user_profile.is_vendor
+        except:
+            is_vendor = False
+        
+        if not is_vendor:
             return Response({"error": "Unauthorized! Only vendors allowed."}, status=status.HTTP_403_FORBIDDEN)
             
         try:
-            # ২. প্রোডাক্টটি এই ভেন্ডরের কি না তা নিশ্চিত করা
+            # প্রোডাক্টটি এই ভেন্ডরের কি না তা নিশ্চিত করা
             product = Product.objects.get(pk=pk, vendor=user)
         except Product.DoesNotExist:
             return Response({"error": "Product not found or unauthorized."}, status=status.HTTP_404_NOT_FOUND)
 
-        # ৩. রিকোয়েস্ট পেলোড থেকে নতুন স্টক ভ্যালু নিয়ে আপডেট করা
+        # রিকোয়েস্ট পেলোড থেকে নতুন স্টক ভ্যালু নিয়ে আপডেট করা
         new_stock = request.data.get('stock')
         if new_stock is not None and int(new_stock) >= 0:
             product.stock = int(new_stock)

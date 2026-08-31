@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { ShoppingBag, LogOut, LogIn, Menu, Search, Globe, User, LayoutDashboard, ChevronDown } from 'lucide-react';
 
+
 const Navbar = ({ toggleSidebar, currentLang, setLocalLang, searchQuery, setSearchQuery }) => {
   const { user, logout } = useContext(AuthContext);
   const { cartItems } = useContext(CartContext);
@@ -121,6 +122,7 @@ const Navbar = ({ toggleSidebar, currentLang, setLocalLang, searchQuery, setSear
                       <LayoutDashboard className="w-3.5 h-3.5 text-gray-400" />
                       <span>{currentLang === 'en' ? 'My Dashboard' : 'আমার ড্যাশবোর্ড'}</span>
                     </button>
+                
 
                     {/* ইউজার যদি বিক্রেতা বা ভেন্ডর হয়, তবে এখানেও ভেন্ডর প্যানেল লিংকটি দেখাবে */}
                     {user.is_vendor && (

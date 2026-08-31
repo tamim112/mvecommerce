@@ -114,7 +114,13 @@ class VendorDashboardStatsView(APIView):
         user = request.user
         
         # ১. নিরাপত্তা চেক: ইউজার ভেন্ডর বা বিক্রেতা কি না
-        if not hasattr(user, 'is_vendor') or not user.is_vendor:
+        try:
+            user_profile = user.profile
+            is_vendor = user_profile.is_vendor
+        except:
+            is_vendor = False
+        
+        if not is_vendor:
             return Response({"error": "Unauthorized! Only vendors can access this dashboard."}, status=status.HTTP_403_FORBIDDEN)
 
         # ২. এই ভেন্ডরের আন্ডারে যতগুলো প্রোডাক্ট সেল হয়েছে বা অর্ডার এসেছে সেগুলো ফিল্টার করা

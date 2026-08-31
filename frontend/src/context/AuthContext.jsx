@@ -8,14 +8,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // অ্যাপ লোড হওয়ার সময় লোকাল স্টোরেজ থেকে ইউজার সেশন রিকভার করা
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const savedUser = localStorage.getItem('user_details');
-    if (token && savedUser) {
+// 🎯 আপনার AuthContext এর ভেতরে useEffect বা ইনিশিয়াল স্টেটটি এমন হওয়া উচিত:
+useEffect(() => {
+  const token = localStorage.getItem('access_token');
+  const savedUser = localStorage.getItem('user');
+
+  if (token && savedUser) {
+    try {
+      // লোকালস্টোরেজে থাকা স্ট্রিংটিকে আবার অবজেক্ট বানিয়ে গ্লোবাল স্টেটে সেট করা
       setUser(JSON.parse(savedUser));
+    } catch (e) {
+      console.error("Error parsing user from localStorage", e);
     }
-    setLoading(false);
-  }, []);
+  }
+  setLoading(false);
+}, []);
+
 
   // লগইন ফাংশন (কমপ্লিট ডেটা সিঙ্ক ফিক্স)
   const login = async (username, password) => {
@@ -27,16 +35,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('refresh_token', response.data.refresh);
       
       // ব্যাকএন্ড থেকে আসা ইউজারের রিয়েল প্রোফাইল ডেটা সেভ করা
-      const userDetails = { 
-        id: response.data.id,
-        username: response.data.username,
-        email: response.data.email,
-        is_vendor: response.data.is_vendor,
-        is_customer: response.data.is_customer
-      }; 
-      
-      setUser(userDetails);
-      localStorage.setItem('user_details', JSON.stringify(userDetails));
+      setUser(response.data.user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
       
       return { success: true };
     } catch (error) {
@@ -50,12 +50,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_details');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

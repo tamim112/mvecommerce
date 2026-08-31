@@ -1,15 +1,20 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import apiClient from '../api/apiClient';
-import { User, ClipboardList, MapPin, Phone, Calendar, CheckCircle, Clock, FileText, ChevronRight, ShoppingBag } from 'lucide-react';
-
+import { User, ClipboardList, MapPin, Phone, Calendar, CheckCircle, Clock, FileText, ChevronRight, ShoppingBag, Store, X } from 'lucide-react';
 const CustomerDashboard = ({ currentLang }) => {
-  const { user } = useContext(AuthContext);
+  const { user, setUser } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // 🎯 অ্যাক্টিভ বা সিলেক্টেড অর্ডার ট্র্যাক করার স্টেট (যা ডানপাশে ডিটেইলস ভিউ দেখাবে)
   const [selectedOrder, setSelectedOrder] = useState(null);
+  
+  // 🔥 ভেন্ডর রিকোয়েস্ট মডাল স্টেট
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [shopName, setShopName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [vendorLoading, setVendorLoading] = useState(false);
 
   useEffect(() => {
     const fetchOrderHistory = async () => {
@@ -36,6 +41,48 @@ const CustomerDashboard = ({ currentLang }) => {
     
     fetchOrderHistory();
   }, []);
+
+  // 🔥 ভেন্ডর রিকোয়েস্ট হ্যান্ডেল করার ফাংশন
+  const handleVendorRequest = async (e) => {
+    e.preventDefault();
+    if (!shopName) return;
+
+    try {
+      setVendorLoading(true);
+      const token = localStorage.getItem('access_token');
+      
+      const res = await apiClient.post('accounts/vendor-request/', 
+        { shop_name: shopName, phone_number: phone },
+        { headers: { Authorization: token ? `Bearer ${token}` : '' } }
+      );
+
+      // ফ্রন্টএন্ডের গ্লোবাল ইউজার স্টেট ও লোকালস্টোরেজ ইনস্ট্যান্ট আপডেট
+      const updatedUser = {
+        ...user,
+        vendor_status: 'PENDING',
+        shop_name: shopName,
+        phone_number: phone || user?.phone_number
+      };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      alert(res.data.message || "আপনার ভেন্ডর রিকোয়েস্টটি সফলভাবে পাঠানো হয়েছে!");
+      setShowVendorModal(false);
+      setShopName('');
+      setPhone('');
+    } catch (err) {
+      console.error("Vendor request error:", err.response?.data || err.message);
+      
+      // ব্যাকএন্ড থেকে এসা সুনির্দিষ্ট এরর মেসেজ বা ডিফল্ট এরর মেসেজ দেখাও
+      const errorMsg = err.response?.data?.error 
+        || err.response?.data?.message 
+        || err.response?.data?.detail
+        || "রিকোয়েস্ট পাঠাতে ব্যর্থ হয়েছে! অনুগ্রহ করে আবার চেষ্টা করুন।";
+      alert(errorMsg);
+    } finally {
+      setVendorLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -80,6 +127,13 @@ const CustomerDashboard = ({ currentLang }) => {
                 <span className="line-clamp-2 leading-tight">{user?.shipping_address || (currentLang === 'en' ? 'No address' : 'ঠিকানা নেই')}</span>
               </div>
             </div>
+            <button 
+              onClick={() => setShowVendorModal(true)}
+              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-black text-indigo-600 border border-indigo-100 hover:bg-indigo-50 rounded-lg transition"
+            >
+              {currentLang === 'en' ? 'Vendor Request' : 'ভেন্ডর রিকোয়েস্ট'}
+            </button>
+              
           </div>
 
           {/* ২. 🆕 ইনভয়েস কুইক লিস্ট সাইডবার (Invoice Sidebar List) */}
@@ -232,10 +286,123 @@ const CustomerDashboard = ({ currentLang }) => {
             </div>
           )}
         </div>
-        </div>
 
       </div>
-  );
-};
 
+      {showVendorModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full space-y-4 animate-fadeIn">
+            
+            {/* মডাল হেডার */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="font-black text-gray-800 text-sm flex items-center gap-2">
+                <Store className="w-5 h-5 text-indigo-600" />
+                {currentLang === 'en' ? 'Become a Vendor' : 'ভেন্ডর হিসেবে যোগ দিন'}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowVendorModal(false);
+                  setShopName('');
+                  setPhone('');
+                }}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* মডাল কন্টেন্ট */}
+            <div className="px-4 pb-4 space-y-4">
+              
+              {/* কেস ১: PENDING স্ট্যাটাস */}
+              {user?.vendor_status === 'PENDING' ? (
+                <div className="bg-amber-50/60 text-amber-800 p-4 rounded-xl border border-amber-100/70 flex items-start gap-3">
+                  <Clock className="w-5 h-5 mt-0.5 text-amber-600 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-black text-sm text-amber-900">{currentLang === 'en' ? 'Request Pending' : 'আবেদনটি প্রক্রিয়াধীন'}</p>
+                    <p className="text-[11px] font-semibold text-amber-600/90">
+                      {currentLang === 'en' 
+                        ? `Your shop "${user.shop_name}" request is under review.`
+                        : `আপনার দোকান "${user.shop_name}" এর ভেন্ডর রিকোয়েস্টটি অ্যাডমিন প্যানেলে জমা আছে।`
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : user?.vendor_status === 'APPROVED' ? (
+                <div className="bg-green-50/60 text-green-800 p-4 rounded-xl border border-green-100/70 flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 mt-0.5 text-green-600 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-black text-sm text-green-900">{currentLang === 'en' ? 'Vendor Approved!' : 'আপনি এখন ভেন্ডর'}</p>
+                    <p className="text-[11px] font-semibold text-green-600/90">
+                      {currentLang === 'en'
+                        ? `Shop: ${user.shop_name} (Active in Merchant Mode)`
+                        : `দোকান: ${user.shop_name} (মার্চেন্ট মোড সক্রিয়)`
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleVendorRequest} className="space-y-3">
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    {currentLang === 'en'
+                      ? 'Fill in your shop details to become a vendor on our platform.'
+                      : 'আপনার দোকানের বিবরণ দিয়ে ভেন্ডর হিসেবে আবেদন করুন।'
+                    }
+                  </p>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                      {currentLang === 'en' ? 'Shop Name' : 'দোকানের নাম'} *
+                    </label>
+                    <input 
+                      required
+                      type="text" 
+                      value={shopName}
+                      onChange={(e) => setShopName(e.target.value)}
+                      placeholder={currentLang === 'en' ? 'e.g., My Store' : 'যেমন: তমিজ গ্রোসারি মার্ট'}
+                      className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                      {currentLang === 'en' ? 'Phone Number' : 'মোবাইল নাম্বার'} ({currentLang === 'en' ? 'Optional' : 'ঐচ্ছিক'})
+                    </label>
+                    <input 
+                      type="text" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="01XXXXXXXXX"
+                      className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowVendorModal(false);
+                        setShopName('');
+                        setPhone('');
+                      }}
+                      className="flex-1 px-3 py-2.5 border border-gray-200 text-gray-600 font-black rounded-lg hover:bg-gray-50 transition text-xs uppercase"
+                    >
+                      {currentLang === 'en' ? 'Cancel' : 'বাতিল'}
+                    </button>
+                    <button
+                      disabled={vendorLoading}
+                      type="submit"
+                      className="flex-1 px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-lg transition disabled:bg-gray-300 text-xs uppercase"
+                    >
+                      {vendorLoading ? '...' : (currentLang === 'en' ? 'Submit' : 'জমা দিন')}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>);
+}
 export default CustomerDashboard;

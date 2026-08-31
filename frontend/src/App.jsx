@@ -13,7 +13,6 @@ import OrderSuccess from './pages/OrderSuccess';
 import VendorDashboard from './pages/VendorDashboard';
 import CustomerDashboard from './pages/CustomerDashboard'; // 🔥 নতুন ইম্পোর্ট
 
-
 // 🔒 ১. নতুন প্রফেশনাল প্রটেক্টেড রাউট (লগইন ছাড়া চেকআউট আটকাতে)
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -135,7 +134,6 @@ function App() {
                   <Route path="/order-success" element={<OrderSuccess />} />
                   <Route path="/vendor-dashboard" element={<VendorDashboard />} />
                   <Route path="/dashboard" element={<ProtectedRoute><CustomerDashboard currentLang={lang} /></ProtectedRoute>} />
-
                 </Routes>
               </main>
             </div>
