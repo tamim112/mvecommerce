@@ -10,6 +10,17 @@ const CustomerDashboard = ({ currentLang }) => {
   // 🎯 অ্যাক্টিভ বা সিলেক্টেড অর্ডার ট্র্যাক করার স্টেট (যা ডানপাশে ডিটেইলস ভিউ দেখাবে)
   const [selectedOrder, setSelectedOrder] = useState(null);
   
+  // 🔥 প্রোফাইল আপডেট মডাল স্টেট
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    address: '',
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+
   // 🔥 ভেন্ডর রিকোয়েস্ট মডাল স্টেট
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [shopName, setShopName] = useState('');
@@ -41,6 +52,56 @@ const CustomerDashboard = ({ currentLang }) => {
     
     fetchOrderHistory();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        phone_number: user.phone_number || '',
+        address: user.address || '',
+      });
+    }
+  }, [user]);
+
+  const openProfileModal = () => {
+    if (!user) return;
+    setProfileForm({
+      first_name: user.first_name || user.profile?.first_name || '',
+      last_name: user.last_name || user.profile?.last_name || '',
+      email: user.email || user.profile?.email || '',
+      phone_number: user.phone_number || user.profile?.phone_number || '',
+      address: user.address || user.profile?.address || '',
+    });
+    setShowProfileModal(true);
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('access_token');
+
+    try {
+      setProfileLoading(true);
+      const res = await apiClient.patch('accounts/update-profile/', profileForm, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const updatedUser = res.data.user;
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setShowProfileModal(false);
+      alert(currentLang === 'en' ? 'Profile updated successfully.' : 'প্রোফাইল আপডেট সফল হয়েছে।');
+    } catch (err) {
+      console.error('Profile update error:', err.response?.data || err.message);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.response?.data?.message || 'Profile update failed.';
+      alert(errorMessage);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   // 🔥 ভেন্ডর রিকোয়েস্ট হ্যান্ডেল করার ফাংশন
   const handleVendorRequest = async (e) => {
@@ -106,34 +167,60 @@ const CustomerDashboard = ({ currentLang }) => {
         <div className="md:col-span-1 space-y-3">
           
           {/* ১. কাস্টমার প্রোফাইলカード */}
-          <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-3xs space-y-2.5">
-            <div className="flex items-center gap-2.5 border-b border-gray-50 pb-2.5">
-              <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-black text-xs uppercase">
-                {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
+          <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-3xs space-y-3">
+            <div className="flex items-center justify-between border-b border-gray-50 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-black text-xs uppercase">
+                  {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="truncate">
+                  <h3 className="font-black text-gray-800 text-xs sm:text-sm truncate">
+                    {(user?.first_name || user?.profile?.first_name || user?.last_name || user?.profile?.last_name)
+                      ? `${user?.first_name || user?.profile?.first_name || ''} ${user?.last_name || user?.profile?.last_name || ''}`.trim()
+                      : '@' + (user?.username || user?.profile?.username || '')}
+                  </h3>
+                  <p className="text-[9.5px] text-gray-400 font-bold truncate">{user?.email || user?.profile?.email}</p>
+                </div>
               </div>
-              <div className="truncate">
-                <h3 className="font-black text-gray-800 text-xs sm:text-sm truncate">@{user?.username}</h3>
-                <p className="text-[9.5px] text-gray-400 font-bold truncate">{user?.email}</p>
+              <button
+                onClick={openProfileModal}
+                className="text-[10px] font-black text-indigo-600 hover:text-indigo-700"
+              >
+                {currentLang === 'en' ? 'Edit' : 'এডিট'}
+              </button>
+            </div>
+
+            <div className="space-y-2 text-[11px] text-gray-600">
+              <div className="grid grid-cols-[90px_1fr] gap-2">
+                <span className="font-bold text-gray-400">{currentLang === 'en' ? 'Name' : 'নাম'}</span>
+                <span className="font-semibold text-gray-700">{user?.first_name || user?.profile?.first_name || user?.last_name || user?.profile?.last_name ? `${user?.first_name || user?.profile?.first_name || ''} ${user?.last_name || user?.profile?.last_name || ''}`.trim() : (currentLang === 'en' ? 'Not added' : 'জোড়া হয়নি')}</span>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] gap-2">
+                <span className="font-bold text-gray-400">Username</span>
+                <span className="font-semibold text-gray-700">@{user?.username || user?.profile?.username || (currentLang === 'en' ? 'No username' : 'ইউজার নেই')}</span>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] gap-2">
+                <span className="font-bold text-gray-400">Email</span>
+                <span className="font-semibold text-gray-700 break-all">{user?.email || user?.profile?.email || (currentLang === 'en' ? 'No email' : 'ইমেইল নেই')}</span>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] gap-2">
+                <span className="font-bold text-gray-400">{currentLang === 'en' ? 'Phone' : 'ফোন'}</span>
+                <span className="font-semibold text-gray-700">{user?.phone_number || user?.profile?.phone_number || (currentLang === 'en' ? 'No phone' : 'ফোন নেই')}</span>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] gap-2">
+                <span className="font-bold text-gray-400">{currentLang === 'en' ? 'Address' : 'ঠিকানা'}</span>
+                <span className="font-semibold text-gray-700 leading-tight">{user?.address || user?.profile?.address || (currentLang === 'en' ? 'No address' : 'ঠিকানা নেই')}</span>
               </div>
             </div>
 
-            <div className="space-y-1.5 text-[11px] text-gray-600">
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                <span>{user?.phone_number || (currentLang === 'en' ? 'No phone' : 'ফোন নম্বর নেই')}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                <span className="line-clamp-2 leading-tight">{user?.shipping_address || (currentLang === 'en' ? 'No address' : 'ঠিকানা নেই')}</span>
-              </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button 
+                onClick={() => setShowVendorModal(true)}
+                className="flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-black text-indigo-600 border border-indigo-100 hover:bg-indigo-50 rounded-lg transition"
+              >
+                {currentLang === 'en' ? 'Vendor Request' : 'ভেন্ডর রিকোয়েস্ট'}
+              </button>
             </div>
-            <button 
-              onClick={() => setShowVendorModal(true)}
-              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-black text-indigo-600 border border-indigo-100 hover:bg-indigo-50 rounded-lg transition"
-            >
-              {currentLang === 'en' ? 'Vendor Request' : 'ভেন্ডর রিকোয়েস্ট'}
-            </button>
-              
           </div>
 
           {/* ২. 🆕 ইনভয়েস কুইক লিস্ট সাইডবার (Invoice Sidebar List) */}
@@ -288,6 +375,106 @@ const CustomerDashboard = ({ currentLang }) => {
         </div>
 
       </div>
+
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="font-black text-gray-800 text-sm flex items-center gap-2">
+                <User className="w-5 h-5 text-indigo-600" />
+                {currentLang === 'en' ? 'Edit profile' : 'প্রোফাইল আপডেট'}
+              </h3>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleProfileUpdate} className="px-4 pb-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                    {currentLang === 'en' ? 'First name' : 'নামের প্রথম অংশ'}
+                  </label>
+                  <input
+                    type="text"
+                    value={profileForm.first_name}
+                    onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                    className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                    {currentLang === 'en' ? 'Last name' : 'নামের শেষ অংশ'}
+                  </label>
+                  <input
+                    type="text"
+                    value={profileForm.last_name}
+                    onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                    className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                    {currentLang === 'en' ? 'Phone number' : 'মোবাইল নম্বর'}
+                  </label>
+                  <input
+                    type="text"
+                    value={profileForm.phone_number}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
+                    className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[10px] uppercase text-gray-500 font-black tracking-wider">
+                    {currentLang === 'en' ? 'Address' : 'ঠিকানা'}
+                  </label>
+                  <textarea
+                    rows="3"
+                    value={profileForm.address}
+                    onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                    className="w-full border border-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 bg-gray-50 text-xs font-semibold resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(false)}
+                  className="flex-1 px-3 py-2.5 border border-gray-200 text-gray-600 font-black rounded-lg hover:bg-gray-50 transition text-xs uppercase"
+                >
+                  {currentLang === 'en' ? 'Cancel' : 'বাতিল'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={profileLoading}
+                  className="flex-1 px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-lg transition disabled:bg-gray-300 text-xs uppercase"
+                >
+                  {profileLoading ? '...' : (currentLang === 'en' ? 'Save' : 'সংরক্ষণ')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showVendorModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">

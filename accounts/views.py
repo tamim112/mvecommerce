@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # সিরিয়ালাইজার ও মডেল ইম্পোর্ট
-from .serializers import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer
+from .serializers import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer, UpdateUserProfileSerializer
 from .models import UserProfile
 
 import uuid  # 🔥 নতুন ইম্পোর্ট: ইউজারনেম ইউনিক ও সেফ রাখার জন্য
@@ -37,11 +37,46 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # অ্যাকাউন্ট তৈরির পর ফ্রেশ ইউজার ডাটা রেসপন্স পাঠানো
         return Response({
             "user": UserSerializer(user).data,
             "message": "User registered successfully!",
         }, status=status.HTTP_201_CREATED)
+
+
+class UpdateProfileView(generics.UpdateAPIView):
+    serializer_class = UpdateUserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        instance.refresh_from_db()
+        profile, _ = UserProfile.objects.get_or_create(user=instance)
+
+        user_payload = UserSerializer(instance).data
+        user_payload.update({
+            'first_name': instance.first_name,
+            'last_name': instance.last_name,
+            'email': instance.email,
+            'phone_number': profile.phone_number or '',
+            'address': profile.address or '',
+            'shop_name': profile.shop_name or '',
+            'vendor_status': profile.vendor_status,
+            'is_customer': profile.is_customer,
+            'is_vendor': profile.is_vendor,
+        })
+
+        return Response({
+            'message': 'Profile updated successfully.',
+            'user': user_payload,
+        }, status=status.HTTP_200_OK)
 
 
 # ==================== 🌐 ৩. ওয়ান-ক্লিক গুগল জিমেইল লগইন এবং অটো-রেজিস্ট্রেশন এপিআই ====================
@@ -122,11 +157,15 @@ class GoogleLoginView(views.APIView):
                 "user": {
                     "id": user.id,
                     "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
                     "email": user.email,
                     "is_staff": user.is_staff,
                     "is_customer": profile.is_customer,
                     "is_vendor": profile.is_vendor,
                     "vendor_status": profile.vendor_status,
+                    "phone_number": profile.phone_number if profile.phone_number else "",
+                    "address": profile.address if profile.address else "",
                     "shop_name": profile.shop_name if profile.shop_name else ""
                 }
             }, status=status.HTTP_200_OK)

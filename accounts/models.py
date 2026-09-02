@@ -23,6 +23,7 @@ class UserProfile(models.Model):
     
     # অতিরিক্ত তথ্যাদি
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
     shop_name = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):

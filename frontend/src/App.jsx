@@ -117,8 +117,8 @@ function App() {
                       />
                     } 
                   /> 
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+                  <Route path="/login" element={<Login currentLang={lang} />} />
+                  <Route path="/register" element={<Register currentLang={lang} />} />
                   <Route path="/cart" element={<Cart />} />
                   
                   {/* 🔒 চেকআউট রাউটটিকে প্রটেক্টেড রাউট দিয়ে ঘিরে দেওয়া হলো */}

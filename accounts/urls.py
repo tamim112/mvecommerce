@@ -5,7 +5,8 @@ from .views import (
     RegisterView, 
     CustomTokenObtainPairView, 
     GoogleLoginView, 
-    RequestVendorView
+    RequestVendorView,
+    UpdateProfileView,
 )
 
 urlpatterns = [
@@ -17,10 +18,13 @@ urlpatterns = [
     
     # 🔄 ৩. জেডব্লিউটি টোকেন রিফ্রেশ এন্ডপয়েন্ট
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # 👤 ৪. ইউজার/প্রোফাইল আপডেট এন্ডপয়েন্ট
+    path('update-profile/', UpdateProfileView.as_view(), name='update_profile'),
     
-    # 🌐 ৪. ওয়ান-ক্লিক গুগল জিমেইল লগইন এবং অটো-রেজিস্ট্রেশন এপিআই
+    # 🌐 ৫. ওয়ান-ক্লিক গুগল জিমেইল লগইন এবং অটো-রেজিস্ট্রেশন এপিআই
     path('google-login/', GoogleLoginView.as_view(), name='google_login'),
     
-    # 🏪 ৫. কাস্টমারের ভেন্ডর মার্চেন্ট অ্যাকাউন্ট রিকোয়েস্ট সাবমিশন এন্ডপয়েন্ট
+    # 🏪 ৬. কাস্টমারের ভেন্ডর মার্চেন্ট অ্যাকাউন্ট রিকোয়েস্ট সাবমিশন এন্ডপয়েন্ট
     path('vendor-request/', RequestVendorView.as_view(), name='vendor_request'),
 ]

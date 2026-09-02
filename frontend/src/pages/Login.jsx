@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import apiClient from '../api/apiClient';
 
-const Login = () => {
+const Login = ({ currentLang = 'bn' }) => {
+  const isBn = currentLang === 'bn';
   // 📧 ফিক্সড: ইউজারনেম অথবা ইমেইল এবং পাসওয়ার্ড ইনপুট স্টেট
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +26,7 @@ const Login = () => {
     if (result.success) {
       window.location.href = '/'; 
     } else {
-      setError('ইউজারনেম/ইমেইল অথবা পাসওয়ার্ড ভুল হয়েছে! অনুগ্রহ করে আবার চেষ্টা করুন।');
+      setError(isBn ? 'ইউজারনেম/ইমেইল অথবা পাসওয়ার্ড ভুল হয়েছে! অনুগ্রহ করে আবার চেষ্টা করুন।' : 'Email or password is incorrect. Please try again.');
     }
   };
 
@@ -50,7 +51,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error("Google Login Backend Error:", err);
-      setError('গুগল লগইন সফল হলেও সেশন তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।');
+      setError(isBn ? 'গুগল লগইন সফল হলেও সেশন তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।' : 'Google login succeeded but the session could not be created. Please try again.');
     }
   };
 
@@ -60,8 +61,8 @@ const Login = () => {
 
       <div className="flex items-center justify-center pt-8 select-none">
         <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 animate-fadeIn">
-          <h2 className="text-2xl font-black text-center text-gray-800 mb-1">স্বাগতম ব্যাক!</h2>
-          <p className="text-xs text-gray-400 text-center mb-6 font-medium">আপনার মার্চেন্ট বা কাস্টমার অ্যাকাউন্ট লগইন করুন</p>
+          <h2 className="text-2xl font-black text-center text-gray-800 mb-1">{isBn ? 'স্বাগতম ব্যাক!' : 'Welcome back!'}</h2>
+          <p className="text-xs text-gray-400 text-center mb-6 font-medium">{isBn ? 'আপনার মার্চেন্ট বা কাস্টমার অ্যাকাউন্ট লগইন করুন' : 'Log in to your merchant or customer account'}</p>
           
           {error && (
             <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl mb-4 text-center font-bold border border-red-100">
@@ -73,7 +74,7 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
-                Email
+                {isBn ? 'ইমেইল' : 'Email'}
               </label>
               <input 
                 type="text" 
@@ -81,13 +82,13 @@ const Login = () => {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-indigo-500 text-xs font-semibold text-gray-700 transition"
-                placeholder="যেমন: demo@gmail.com"
+                placeholder={isBn ? 'যেমন: demo@gmail.com' : 'e.g. demo@gmail.com'}
               />
             </div>
             
             <div>
               <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
-                Password
+                {isBn ? 'পাসওয়ার্ড' : 'Password'}
               </label>
               <input 
                 type="password" 
@@ -104,14 +105,14 @@ const Login = () => {
               disabled={loading}
               className="w-full bg-indigo-600 text-white font-black py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition text-xs uppercase tracking-wider disabled:bg-gray-400"
             >
-              {loading ? "প্রসেস হচ্ছে..." : "লগইন করুন"}
+              {loading ? (isBn ? 'প্রসেস হচ্ছে...' : 'Processing...') : (isBn ? 'লগইন করুন' : 'Log in')}
             </button>
           </form>
 
           {/* 🔘 ওয়ান-ক্লিক জিমেইল লগইন ডিভাইডার রিবন */}
           <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-gray-100"></div>
-            <span className="flex-shrink mx-3 text-gray-400 font-bold text-[10px] uppercase">অথবা জিমেইল দিয়ে</span>
+            <span className="flex-shrink mx-3 text-gray-400 font-bold text-[10px] uppercase">{isBn ? 'অথবা গুগল দিয়ে' : 'or continue with'}</span>
             <div className="flex-grow border-t border-gray-100"></div>
           </div>
 
@@ -129,7 +130,10 @@ const Login = () => {
           </div>
 
           <p className="text-xs font-bold text-center text-gray-400 mt-6">
-            প্লাটফর্মে নতুন? <Link to="/register" className="text-indigo-600 font-black hover:underline">নতুন অ্যাকাউন্ট তৈরি করুন</Link>
+            {isBn ? 'প্লাটফর্মে নতুন?' : 'New here?'}{' '}
+            <Link to="/register" className="text-indigo-600 font-black hover:underline">
+              {isBn ? 'নতুন অ্যাকাউন্ট তৈরি করুন' : 'Create an account'}
+            </Link>
           </p>
         </div>
       </div>

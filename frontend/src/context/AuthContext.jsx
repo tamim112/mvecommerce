@@ -3,26 +3,48 @@ import apiClient from '../api/apiClient';
 
 export const AuthContext = createContext();
 
+const normalizeUser = (rawUser) => {
+  if (!rawUser) return null;
+
+  const profile = rawUser.profile || {};
+
+  return {
+    ...rawUser,
+    id: rawUser.id ?? profile.id ?? null,
+    username: rawUser.username ?? profile.username ?? '',
+    first_name: rawUser.first_name ?? profile.first_name ?? '',
+    last_name: rawUser.last_name ?? profile.last_name ?? '',
+    email: rawUser.email ?? profile.email ?? '',
+    phone_number: rawUser.phone_number ?? profile.phone_number ?? '',
+    address: rawUser.address ?? profile.address ?? '',
+    shop_name: rawUser.shop_name ?? profile.shop_name ?? '',
+    vendor_status: rawUser.vendor_status ?? profile.vendor_status ?? 'NONE',
+    is_customer: rawUser.is_customer ?? profile.is_customer ?? true,
+    is_vendor: rawUser.is_vendor ?? profile.is_vendor ?? false,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // অ্যাপ লোড হওয়ার সময় লোকাল স্টোরেজ থেকে ইউজার সেশন রিকভার করা
-// 🎯 আপনার AuthContext এর ভেতরে useEffect বা ইনিশিয়াল স্টেটটি এমন হওয়া উচিত:
-useEffect(() => {
-  const token = localStorage.getItem('access_token');
-  const savedUser = localStorage.getItem('user');
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const savedUser = localStorage.getItem('user');
 
-  if (token && savedUser) {
-    try {
-      // লোকালস্টোরেজে থাকা স্ট্রিংটিকে আবার অবজেক্ট বানিয়ে গ্লোবাল স্টেটে সেট করা
-      setUser(JSON.parse(savedUser));
-    } catch (e) {
-      console.error("Error parsing user from localStorage", e);
+    if (token && savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        const normalizedUser = normalizeUser(parsedUser);
+        setUser(normalizedUser);
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
+      } catch (e) {
+        console.error("Error parsing user from localStorage", e);
+      }
     }
-  }
-  setLoading(false);
-}, []);
+    setLoading(false);
+  }, []);
 
 
   // লগইন ফাংশন (কমপ্লিট ডেটা সিঙ্ক ফিক্স)
@@ -34,9 +56,11 @@ useEffect(() => {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
       
+      const normalizedUser = normalizeUser(response.data.user);
+
       // ব্যাকএন্ড থেকে আসা ইউজারের রিয়েল প্রোফাইল ডেটা সেভ করা
-      setUser(response.data.user);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(normalizedUser);
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
       
       return { success: true };
     } catch (error) {

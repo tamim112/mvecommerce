@@ -1,42 +1,110 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-# 🔥 ফিক্স: আপনার তৈরি করা প্রোফাইল মডেলটি এখানে ইম্পোর্ট করতে হবে
-from .models import UserProfile  
+from .models import UserProfile
 
-# 1️⃣ প্রথমে জ্যাঙ্গোর ডিফল্ট ইউজার রেজিস্ট্রেশনটি আন-রেজিস্টার (Unregister) করতে হবে
 try:
     admin.site.unregister(User)
 except admin.sites.NotRegistered:
     pass
 
-class CustomUserAdmin(UserAdmin):
-    # ইনলাইন ফিল্ডসেট অর্গানাইজেশন (ডিফল্ট ফিল্ডের সাথে কাস্টম ফিল্ড অ্যাড করা)
-    # নোট: প্রোফাইল রিলেটেড কোনো ওয়ান-টু-ওয়ান ফিল্ড থাকলে তা ইনলাইন হিসেবে দেখানোটাই স্ট্যান্ডার্ড, 
-    # অথবা আপনার মডেলে সরাসরি এক্সটেন্ডেড ফিল্ড থাকলে এভাবে রাখা যাবে।
-    fieldsets = UserAdmin.fieldsets + (
-        ('System Multi-Role Selection', {'fields': ('is_customer', 'is_vendor')}) if hasattr(User, 'is_customer') else (None, {'fields': ()}),
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    fk_name = 'user'
+    extra = 0
+    fields = (
+        'phone_number',
+        'address',
+        'is_customer',
+        'is_vendor',
+        'vendor_status',
+        'shop_name',
     )
-    
-    list_display = ['username', 'email', 'is_staff', 'is_active']
+
+
+class CustomUserAdmin(UserAdmin):
+    inlines = [UserProfileInline]
+    fieldsets = (
+        (None, {
+            'fields': ('username', 'password')
+        }),
+        ('Personal info', {
+            'fields': ('first_name', 'last_name', 'email')
+        }),
+        ('Account settings', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+        }),
+    )
+    list_display = ['username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active', 'get_phone_number', 'get_vendor_status']
     list_filter = ['is_staff', 'is_active']
-    search_fields = ['username', 'email']
+    search_fields = ['username', 'first_name', 'last_name', 'email', 'profile__phone_number', 'profile__shop_name']
     ordering = ['-id']
 
-# 2️⃣ ভেন্ডর প্রোফাইল এডমিন ম্যানেজার
-class VendorProfileAdmin(admin.ModelAdmin):
-    list_display = ['shop_name', 'get_vendor_username', 'vendor_status', 'phone_number']
-    list_filter = ['vendor_status']
-    search_fields = ['shop_name', 'user__username', 'phone_number']
-    actions = ['approve_selected_vendors', 'reject_selected_vendors'] # চেইন্ড একশন মেনু
+    def get_phone_number(self, obj):
+        return obj.profile.phone_number if hasattr(obj, 'profile') else ''
+    get_phone_number.short_description = 'Phone'
+
+    def get_vendor_status(self, obj):
+        return obj.profile.vendor_status if hasattr(obj, 'profile') else ''
+    get_vendor_status.short_description = 'Vendor Status'
+
+
+class UserProfileAdminForm(forms.ModelForm):
+    first_name = forms.CharField(required=False, label='First Name')
+    last_name = forms.CharField(required=False, label='Last Name')
+    email = forms.EmailField(required=False, label='Email')
+
+    class Meta:
+        model = UserProfile
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.user_id:
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        user = instance.user
+        user.first_name = self.cleaned_data.get('first_name', '')
+        user.last_name = self.cleaned_data.get('last_name', '')
+        user.email = self.cleaned_data.get('email', '')
+        user.save()
+        if commit:
+            instance.save()
+        return instance
+
+
+class UserProfileAdmin(admin.ModelAdmin):
+    form = UserProfileAdminForm
+    list_display = ['user', 'get_first_name', 'get_last_name', 'get_email', 'phone_number', 'address', 'is_customer', 'is_vendor', 'vendor_status', 'shop_name']
+    list_filter = ['is_customer', 'is_vendor', 'vendor_status']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'user__email', 'phone_number', 'shop_name']
     ordering = ['-id']
+    fieldsets = (
+        ('Customer Information', {
+            'fields': ('user', 'first_name', 'last_name', 'email', 'phone_number', 'address', 'is_customer', 'is_vendor', 'vendor_status', 'shop_name')
+        }),
+    )
 
-    # ভেন্ডরের ইউজারনেম কলামে নিয়ে আসার কাস্টম মেথড
-    def get_vendor_username(self, obj):
-        return obj.user.username
-    get_vendor_username.short_description = 'Vendor Account'
+    @admin.display(description='First Name')
+    def get_first_name(self, obj):
+        return obj.user.first_name if obj.user else ''
 
-    # 🚀 ওয়ান-ক্লিক বাল্ক অ্যাপ্রুভাল একশন
+    @admin.display(description='Last Name')
+    def get_last_name(self, obj):
+        return obj.user.last_name if obj.user else ''
+
+    @admin.display(description='Email')
+    def get_email(self, obj):
+        return obj.user.email if obj.user else ''
+
+    actions = ['approve_selected_vendors', 'reject_selected_vendors']
+
     @admin.action(description='Approve selected pending merchant profiles')
     def approve_selected_vendors(self, request, queryset):
         for profile in queryset:
@@ -44,17 +112,16 @@ class VendorProfileAdmin(admin.ModelAdmin):
             profile.vendor_status = 'APPROVED'
             profile.is_customer = True
             profile.save()
-        self.message_user(request, "নির্বাচিত কাস্টমারদের ভেন্ডর অ্যাকাউন্ট সফলভাবে সচল (APPROVED) করা হয়েছে।")
+        self.message_user(request, 'Selected merchant profiles approved successfully.')
 
-    # 🛑 ওয়ান-ক্লিক বাল্ক রিজেকশন একশন
     @admin.action(description='Reject selected merchant profiles')
     def reject_selected_vendors(self, request, queryset):
         for profile in queryset:
             profile.is_vendor = False
             profile.vendor_status = 'REJECTED'
             profile.save()
-        self.message_user(request, "নির্বাচিত রিকোয়েস্টগুলো বাতিল (REJECTED) করা হয়েছে।")
+        self.message_user(request, 'Selected merchant profiles rejected successfully.')
 
-# 3️⃣ ফাইনাল মডেল রেজিস্ট্রেশন (সঠিক ট্যাগ ক্রমানুসারে)
+
 admin.site.register(User, CustomUserAdmin)
-admin.site.register(UserProfile, VendorProfileAdmin) # 🔥 ফিক্স: মডেল এবং এডমিন ক্লাস দুটিই পাস করা হলো
+admin.site.register(UserProfile, UserProfileAdmin)
