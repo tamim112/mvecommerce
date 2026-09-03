@@ -100,6 +100,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 import os
 import dj_database_url
 
+GOOGLE_CLIENT_ID = os.environ.get(
+    'GOOGLE_CLIENT_ID',
+    '319373078569-e4g1lprci9svolk06q017u72lavuvbd9.apps.googleusercontent.com',
+)
+
 # DATABASES কনফিগারেশন (SQLite + PostgreSQL Hybrid)
 if os.environ.get('RENDER'):
     # Render-এর linked PostgreSQL service-এর DATABASE_URL ব্যবহার করো।

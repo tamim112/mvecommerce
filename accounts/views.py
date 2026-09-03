@@ -81,8 +81,9 @@ class UpdateProfileView(generics.UpdateAPIView):
 
 # ==================== 🌐 ৩. ওয়ান-ক্লিক গুগল জিমেইল লগইন এবং অটো-রেজিস্ট্রেশন এপিআই ====================
 import uuid
-import base64
-import json
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.crypto import get_random_string  # 🔥 ফিক্স: স্ট্যান্ডার্ড র্যান্ডম পাসওয়ার্ড জেনারেটর
 from rest_framework import views, permissions, status
@@ -101,16 +102,16 @@ class GoogleLoginView(views.APIView):
             return Response({"error": "Google token is missing!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # 🚀 নেটওয়ার্ক কল ছাড়া জাদুকরী ট্রিকস: গুগলের সিকিউর টোকেন সরাসরি পাইথনেই ডিকোড করা
-            token_parts = token.split('.')
-            if len(token_parts) != 3:
-                return Response({"error": "Invalid token format received from Google"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # বেস৬৪ প্যাডিং ফিক্সসহ পে-লোড ডিকোড করা
-            payload_b64 = token_parts[1]
-            payload_b64 += '=' * (-len(payload_b64) % 4)
-            payload_json = base64.b64decode(payload_b64).decode('utf-8')
-            idinfo = json.loads(payload_json)
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+
+            if idinfo.get('iss') not in ('accounts.google.com', 'https://accounts.google.com'):
+                return Response({"error": "Invalid Google token issuer"}, status=status.HTTP_401_UNAUTHORIZED)
+            if not idinfo.get('email_verified'):
+                return Response({"error": "Google email is not verified"}, status=status.HTTP_401_UNAUTHORIZED)
 
             # সেফটি চেক
             if "email" not in idinfo:
@@ -170,6 +171,9 @@ class GoogleLoginView(views.APIView):
                 }
             }, status=status.HTTP_200_OK)
 
+        except ValueError as e:
+            print("GOOGLE TOKEN VERIFICATION ERROR:", str(e))
+            return Response({"error": "Invalid or expired Google token"}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             print("🔥 GOOGLE LOGIN CRITICAL EXCEPTION:", str(e))
             return Response({"error": f"Failed to decrypt Google Token: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
