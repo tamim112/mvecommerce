@@ -12,7 +12,7 @@ User = get_user_model()
 # লাইভ অ্যাডমিন অ্যাকাউন্টের ক্রিডেনশিয়ালস
 username = "admin_live"
 email = "admin@bazarhub.com"
-password = "AdminLivePassword2026" # পাসওয়ার্ডটি মনে রাখবেন
+password = "admin@123" # পাসওয়ার্ডটি মনে রাখবেন
 
 if not User.objects.filter(username=username).exists():
     print("Creating live superuser...")

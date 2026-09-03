@@ -102,9 +102,12 @@ import dj_database_url
 
 # DATABASES কনফিগারেশন (SQLite + PostgreSQL Hybrid)
 if os.environ.get('RENDER'):
-    # লাইভ সার্ভারে (Render) এই সিকিউর ক্লাউড ডেটাবেজটি চলবে
+    # Render-এর linked PostgreSQL service-এর DATABASE_URL ব্যবহার করো।
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise RuntimeError('DATABASE_URL is required when running on Render.')
     DATABASES = {
-        'default': dj_database_url.parse('postgresql://bazarhubuser:CkfZPcfjXRgHl1LfAD8YHb091btjX5R3@dpg-da6kjr9srm7s73afo9jg-a/bazarhub_db')
+        'default': dj_database_url.parse(database_url, conn_max_age=600, ssl_require=True)
     }
 else:
     # আপনার লোকাল পিসিতে আগের মতোই সহজ SQLite চলবে (যাতে লোকাল কাজ ব্যাহত না হয়)
