@@ -28,7 +28,7 @@ DEBUG = True
 
 # কোন কোন ডোমেন এই ব্যাকএন্ড অ্যাক্সেস করতে পারবে
 ALLOWED_HOSTS = [
-    'bazarhub-f272.onrender.com', # 🔥 আপনার আসল রেন্ডার সাব-ডোমেন
+    'mvecommerce.onrender.com', # 🔥 আপনার আসল রেন্ডার সাব-ডোমেন
     '127.0.0.1', 
     'localhost',
     'bazarhubbd.vercel.app',
@@ -41,7 +41,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Security protection configuration for live production headers
 CSRF_TRUSTED_ORIGINS = [
-    'https://bazarhub-f272.onrender.com',
+    'https://mvecommerce.onrender.com',
     'https://bazarhubbd.vercel.app'
 ]
 
