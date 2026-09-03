@@ -9,16 +9,83 @@ import {
   RefreshCw, 
   Layers, 
   Save, 
+  Scale,
   AlertTriangle, 
   CheckCircle2, 
   X, 
   Image, 
-  FilePlus 
+  FilePlus,
+  FileText
 } from 'lucide-react';
 
 
 const VendorDashboard = ({ currentLang }) => {
   const { user } = useContext(AuthContext);
+  const t = currentLang === 'en' ? {
+    revenue: 'Total Sales Revenue',
+    soldProducts: 'Total Products Sold',
+    uniqueOrders: 'Total Unique Orders',
+    units: 'items',
+    salesLedger: 'Sales Ledger',
+    inventory: 'Inventory Stock Manager',
+    addProduct: 'Add Product',
+    noSales: 'No sales records found yet.',
+    orderId: 'Order ID',
+    productName: 'Product Name',
+    qty: 'Qty',
+    unitPrice: 'Unit Price',
+    totalPayout: 'Total Payout',
+    noProducts: 'No products uploaded yet.',
+    product: 'Product',
+    basePrice: 'Base Price',
+    liveStock: 'Current Live Stock',
+    newStock: 'New Stock Input',
+    status: 'Status',
+    outOfStock: 'Out of stock',
+    active: 'Active',
+    addNewProduct: 'Add New Product to Store',
+    productNameLabel: 'Product Name',
+    chooseCategory: 'Select a subcategory',
+    price: 'Price',
+    stock: 'Stock Quantity',
+    unitType: 'Unit Type',
+    description: 'Description',
+    productImage: 'Product Image',
+    uploadImage: 'Click to upload image',
+    publishProduct: 'Publish Product',
+  } : {
+    revenue: 'মোট বিক্রয় রেভিনিউ',
+    soldProducts: 'বিক্রিত মোট পণ্য',
+    uniqueOrders: 'মোট ইউনিক অর্ডার',
+    units: 'টি',
+    salesLedger: 'বিক্রয় খতিয়ান ফিড',
+    inventory: 'ইনভেন্টরি স্টক ম্যানেজার',
+    addProduct: 'নতুন প্রোডাক্ট যোগ করুন',
+    noSales: 'আপনার কোনো পণ্য এখনো বিক্রি হয়নি!',
+    orderId: 'অর্ডার আইডি',
+    productName: 'পণ্যের নাম',
+    qty: 'পরিমাণ',
+    unitPrice: 'একক মূল্য',
+    totalPayout: 'মোট প্রাপ্য',
+    noProducts: 'আপনার কোনো পণ্য আপলোড করা নেই!',
+    product: 'পণ্য',
+    basePrice: 'মূল মূল্য',
+    liveStock: 'বর্তমান স্টক',
+    newStock: 'নতুন স্টক ইনপুট',
+    status: 'স্ট্যাটাস',
+    outOfStock: 'স্টক শেষ',
+    active: 'সক্রিয়',
+    addNewProduct: 'দোকানে নতুন পণ্য যোগ করুন',
+    productNameLabel: 'পণ্যের নাম',
+    chooseCategory: 'একটি সাব-ক্যাটাগরি বেছে নিন',
+    price: 'মূল্য',
+    stock: 'স্টক সংখ্যা',
+    unitType: 'ইউনিট টাইপ',
+    description: 'বিবরণ',
+    productImage: 'পণ্যের ছবি',
+    uploadImage: 'ক্লিক করে ছবি আপলোড করুন',
+    publishProduct: 'পণ্যটি স্টোরে লাইভ করুন',
+  };
   const [stats, setStats] = useState(null);
   const [salesOrders, setSalesOrders] = useState([]);
   const [myProducts, setMyProducts] = useState([]);
@@ -205,7 +272,7 @@ const VendorDashboard = ({ currentLang }) => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-3xs flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">মোট বিক্রয় রেভিনিউ</span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">{t.revenue}</span>
             <h3 className="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">৳{stats?.total_revenue || 0}</h3>
           </div>
           <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center shadow-3xs">
@@ -215,8 +282,8 @@ const VendorDashboard = ({ currentLang }) => {
 
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-3xs flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">বিক্রিত মোট পণ্য</span>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">{stats?.total_items_sold || 0} টি</h3>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">{t.soldProducts}</span>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">{stats?.total_items_sold || 0} {t.units}</h3>
           </div>
           <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shadow-3xs">
             <PackageCheck className="w-5 h-5" />
@@ -225,8 +292,8 @@ const VendorDashboard = ({ currentLang }) => {
 
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-3xs flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">মোট ইউনিক অর্ডার</span>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">{stats?.total_orders_count || 0} টি</h3>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">{t.uniqueOrders}</span>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">{stats?.total_orders_count || 0} {t.units}</h3>
           </div>
           <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center shadow-3xs">
             <ShoppingBag className="w-5 h-5" />
@@ -241,14 +308,14 @@ const VendorDashboard = ({ currentLang }) => {
             onClick={() => setActiveTab('sales')}
             className={`pb-2 transition-all ${activeTab === 'sales' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
           >
-            {currentLang === 'en' ? 'Sales Ledger' : 'বিক্রয় খতিয়ান ফিড'}
+            {t.salesLedger}
           </button>
           <button 
             onClick={() => setActiveTab('inventory')}
             className={`pb-2 transition-all flex items-center gap-1 ${activeTab === 'inventory' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
           >
             <Layers className="w-3.5 h-3.5" />
-            {currentLang === 'en' ? 'Inventory Stock Manager' : 'ইনভেন্টরি স্টক ম্যানেজার'}
+            {t.inventory}
           </button>
         </div>
 
@@ -258,7 +325,7 @@ const VendorDashboard = ({ currentLang }) => {
             className="mb-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black px-2.5 py-1.5 rounded-lg text-[11px] flex items-center gap-1 transition shadow-3xs"
           >
             <FilePlus className="w-3.5 h-3.5" />
-            <span>{currentLang === 'en' ? 'Add Product' : 'নতুন প্রোডাক্ট যোগ করুন'}</span>
+            <span>{t.addProduct}</span>
           </button>
         )}
       </div>
@@ -269,17 +336,17 @@ const VendorDashboard = ({ currentLang }) => {
           <div className="overflow-x-auto">
             {salesOrders.length === 0 ? (
               <div className="text-center py-12 text-xs text-gray-400 font-medium">
-                {currentLang === 'en' ? 'No sales records found yet.' : 'আপনার কোনো পণ্য এখনো বিক্রি হয়নি!'}
+                {t.noSales}
               </div>
             ) : (
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-gray-50/40 text-gray-400 uppercase tracking-wider font-black text-[10px] border-b border-gray-100">
-                    <th className="px-4 py-2.5">Order ID</th>
-                    <th className="px-4 py-2.5">Product Name</th>
-                    <th className="px-4 py-2.5 text-center">Qty</th>
-                    <th className="px-4 py-2.5 text-right">Unit Price</th>
-                    <th className="px-4 py-2.5 text-right">Total Payout</th>
+                    <th className="px-4 py-2.5">{t.orderId}</th>
+                    <th className="px-4 py-2.5">{t.productName}</th>
+                    <th className="px-4 py-2.5 text-center">{t.qty}</th>
+                    <th className="px-4 py-2.5 text-right">{t.unitPrice}</th>
+                    <th className="px-4 py-2.5 text-right">{t.totalPayout}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-gray-600 font-medium">
@@ -305,18 +372,18 @@ const VendorDashboard = ({ currentLang }) => {
           <div className="bg-white rounded-xl border border-gray-100 shadow-3xs overflow-hidden">
             {myProducts.length === 0 ? (
               <div className="text-center py-12 text-xs text-gray-400 font-medium">
-                {currentLang === 'en' ? 'No products uploaded yet.' : 'আপনার কোনো পণ্য আপলোড করা নেই!'}
+                {t.noProducts}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-gray-50/40 text-gray-400 uppercase tracking-wider font-black text-[10px] border-b border-gray-100">
-                      <th className="px-4 py-2.5">Product</th>
-                      <th className="px-4 py-2.5">Base Price</th>
-                      <th className="px-4 py-2.5">Current Live Stock</th>
-                      <th className="px-4 py-2.5 text-center">New Stock Input</th>
-                      <th className="px-4 py-2.5 text-right">Status</th>
+                      <th className="px-4 py-2.5">{t.product}</th>
+                      <th className="px-4 py-2.5">{t.basePrice}</th>
+                      <th className="px-4 py-2.5">{t.liveStock}</th>
+                      <th className="px-4 py-2.5 text-center">{t.newStock}</th>
+                      <th className="px-4 py-2.5 text-right">{t.status}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 text-gray-600 font-medium">
@@ -339,11 +406,11 @@ const VendorDashboard = ({ currentLang }) => {
                         <td className="px-4 py-3 text-right">
                           {product.stock === 0 ? (
                             <span className="inline-flex items-center gap-1 text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full text-[10px]">
-                              <AlertTriangle className="w-3 h-3" /> Out of stock
+                              <AlertTriangle className="w-3 h-3" /> {t.outOfStock}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full text-[10px]">
-                              <CheckCircle2 className="w-3 h-3" /> Active
+                              <CheckCircle2 className="w-3 h-3" /> {t.active}
                             </span>
                           )}
                         </td>
@@ -383,8 +450,9 @@ const VendorDashboard = ({ currentLang }) => {
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-center items-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4 shadow-xl">
             <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-sm font-black text-gray-800">
-                {currentLang === 'en' ? 'Add New Product to Store' : 'দোকানে নতুন পণ্য যোগ করুন'}
+              <h3 className="flex items-center gap-1.5 text-sm font-black text-gray-800">
+                <FilePlus className="w-4 h-4 text-indigo-600" aria-hidden="true" />
+                <span>{t.addNewProduct}</span>
               </h3>
               <button
                 type="button"
@@ -397,7 +465,10 @@ const VendorDashboard = ({ currentLang }) => {
 
             <form onSubmit={handleProductSubmit} className="space-y-3 text-xs font-semibold">
               <div>
-                <label className="block text-gray-600 mb-1">পণ্যের নাম (Product Name) *</label>
+                <label className="flex items-center gap-1 text-gray-600 mb-1">
+                  <PackageCheck className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                  {t.productNameLabel} *
+                </label>
                 <input
                   required
                   type="text"
@@ -409,14 +480,17 @@ const VendorDashboard = ({ currentLang }) => {
               </div>
 
               <div>
-                <label className="block text-gray-600 mb-1">ক্যাটাগরি সিলেক্ট করুন *</label>
+                <label className="flex items-center gap-1 text-gray-600 mb-1">
+                  <Layers className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                  {currentLang === 'en' ? 'Select Category' : 'ক্যাটাগরি সিলেক্ট করুন'} *
+                </label>
                 <select
                   required
                   value={formData.subcategory}
                   onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
                   className="w-full border px-3 py-2 rounded-xl focus:outline-none focus:border-indigo-500 bg-gray-50/50 font-medium text-gray-700"
                 >
-                  <option value="">-- একটি সাব-ক্যাটাগরি বেছে নিন --</option>
+                  <option value="">-- {t.chooseCategory} --</option>
                   {Array.isArray(categories) && categories.map((cat) => (
                     cat.subcategories && cat.subcategories.length > 0 ? (
                       <optgroup key={cat.id || cat.name} label={cat.name}>
@@ -438,7 +512,10 @@ const VendorDashboard = ({ currentLang }) => {
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-gray-600 mb-1">মূল্য (৳) *</label>
+                  <label className="flex items-center gap-1 text-gray-600 mb-1">
+                    <DollarSign className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                    {t.price} (৳) *
+                  </label>
                   <input
                     required
                     type="number"
@@ -450,7 +527,10 @@ const VendorDashboard = ({ currentLang }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-600 mb-1">স্টক সংখ্যা *</label>
+                  <label className="flex items-center gap-1 text-gray-600 mb-1">
+                    <PackageCheck className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                    {t.stock} *
+                  </label>
                   <input
                     required
                     type="number"
@@ -462,7 +542,10 @@ const VendorDashboard = ({ currentLang }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-600 mb-1">ইউনিট টাইপ</label>
+                  <label className="flex items-center gap-1 text-gray-600 mb-1">
+                    <Scale className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                    {t.unitType}
+                  </label>
                   <input
                     required
                     type="text"
@@ -475,7 +558,10 @@ const VendorDashboard = ({ currentLang }) => {
               </div>
 
               <div>
-                <label className="block text-gray-600 mb-1">বিবরণ (Description)</label>
+                <label className="flex items-center gap-1 text-gray-600 mb-1">
+                  <FileText className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                  {t.description}
+                </label>
                 <textarea
                   rows="2"
                   value={formData.description}
@@ -486,7 +572,10 @@ const VendorDashboard = ({ currentLang }) => {
               </div>
 
               <div>
-                <label className="block text-gray-600 mb-1">পণ্যের ছবি (Product Image) *</label>
+                <label className="flex items-center gap-1 text-gray-600 mb-1">
+                  <Image className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                  {t.productImage} *
+                </label>
                 <div className="relative border-2 border-dashed rounded-xl p-3 text-center bg-gray-50/50 hover:bg-gray-50 transition cursor-pointer flex items-center justify-center gap-2">
                   <Image className="w-4 h-4 text-gray-400" />
                   <input
@@ -497,7 +586,7 @@ const VendorDashboard = ({ currentLang }) => {
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
                   <span className="text-gray-500 text-xs">
-                    {productImage ? productImage.name : (currentLang === 'en' ? 'Click to upload image' : 'ক্লিক করে ছবি আপলোড করুন')}
+                    {productImage ? productImage.name : t.uploadImage}
                   </span>
                 </div>
               </div>
@@ -506,12 +595,13 @@ const VendorDashboard = ({ currentLang }) => {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition disabled:opacity-50"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
+                  {!formLoading && <FilePlus className="w-4 h-4" aria-hidden="true" />}
                   {formLoading ? (
                     <span className="animate-pulse">{currentLang === 'en' ? 'Uploading...' : 'আপলোড হচ্ছে...'}</span>
                   ) : (
-                    currentLang === 'en' ? 'Publish Product' : 'পণ্যটি স্টোরে লাইভ করুন'
+                    t.publishProduct
                   )}
                 </button>
               </div>

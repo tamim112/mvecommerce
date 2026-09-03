@@ -132,7 +132,7 @@ function App() {
                   />
                   
                   <Route path="/order-success" element={<OrderSuccess />} />
-                  <Route path="/vendor-dashboard" element={<VendorDashboard />} />
+                  <Route path="/vendor-dashboard" element={<VendorDashboard currentLang={lang} />} />
                   <Route path="/dashboard" element={<ProtectedRoute><CustomerDashboard currentLang={lang} /></ProtectedRoute>} />
                 </Routes>
               </main>

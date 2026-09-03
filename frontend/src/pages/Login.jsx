@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import apiClient from '../api/apiClient';
+import { LoaderCircle, LockKeyhole, LogIn, Mail } from 'lucide-react';
 
 const Login = ({ currentLang = 'bn' }) => {
   const isBn = currentLang === 'bn';
@@ -73,7 +74,8 @@ const Login = ({ currentLang = 'bn' }) => {
           {/* ইমেইল ও পাসওয়ার্ড ইনপুট ফর্ম */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+              <label className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                <Mail className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
                 {isBn ? 'ইমেইল' : 'Email'}
               </label>
               <input 
@@ -87,7 +89,8 @@ const Login = ({ currentLang = 'bn' }) => {
             </div>
             
             <div>
-              <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+              <label className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                <LockKeyhole className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
                 {isBn ? 'পাসওয়ার্ড' : 'Password'}
               </label>
               <input 
@@ -103,9 +106,14 @@ const Login = ({ currentLang = 'bn' }) => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-indigo-600 text-white font-black py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition text-xs uppercase tracking-wider disabled:bg-gray-400"
+              className="w-full bg-indigo-600 text-white font-black py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition text-xs uppercase tracking-wider disabled:bg-gray-400 flex items-center justify-center gap-2"
             >
-              {loading ? (isBn ? 'প্রসেস হচ্ছে...' : 'Processing...') : (isBn ? 'লগইন করুন' : 'Log in')}
+              {loading ? (
+                <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <LogIn className="w-4 h-4" aria-hidden="true" />
+              )}
+              <span>{loading ? (isBn ? 'প্রসেস হচ্ছে...' : 'Processing...') : (isBn ? 'লগইন করুন' : 'Log in')}</span>
             </button>
           </form>
 
