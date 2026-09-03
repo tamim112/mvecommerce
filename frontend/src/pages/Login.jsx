@@ -5,6 +5,9 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import apiClient from '../api/apiClient';
 import { LoaderCircle, LockKeyhole, LogIn, Mail } from 'lucide-react';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  || '319373078569-e4g1lprci9svolk06q017u72lavuvbd9.apps.googleusercontent.com';
+
 const Login = ({ currentLang = 'bn' }) => {
   const isBn = currentLang === 'bn';
   // 📧 ফিক্সড: ইউজারনেম অথবা ইমেইল এবং পাসওয়ার্ড ইনপুট স্টেট
@@ -58,7 +61,7 @@ const Login = ({ currentLang = 'bn' }) => {
 
   return (
     // 💡 টিপস: এখানে আপনার নিজের Google Client ID বসিয়ে নেবেন
-    <GoogleOAuthProvider clientId="319373078569-e4g1lprci9svolk06q017u72lavuvbd9.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
 
       <div className="flex items-center justify-center pt-8 select-none">
         <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 animate-fadeIn">

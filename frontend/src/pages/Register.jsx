@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import apiClient from '../api/apiClient';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  || '319373078569-e4g1lprci9svolk06q017u72lavuvbd9.apps.googleusercontent.com';
+
 const initialForm = {
   firstName: '',
   lastName: '',
@@ -84,7 +87,7 @@ const Register = ({ currentLang = 'bn' }) => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="319373078569-e4g1lprci9svolk06q017u72lavuvbd9.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div className="flex items-center justify-center pt-8 select-none">
         <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-lg border border-gray-100 animate-fadeIn">
           <h2 className="text-3xl font-black text-center text-gray-800 mb-2">{isBn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create account'}</h2>
